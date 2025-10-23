@@ -1,0 +1,6 @@
+node_modules/
+.env
+config.json
+points.json
+points.db
+.DS_Store

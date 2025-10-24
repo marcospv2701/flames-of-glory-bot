@@ -1,37 +1,26 @@
-// Commands/addPoints.js
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { addPoints } = require('../Data/dataPoints');
 
-async function registerAddPointsCommand(client) {
-    const addPointsCommand = new SlashCommandBuilder()
-        .setName('addpoints')
-        .setDescription('Add points to a user.')
-        .addUserOption(opt => opt.setName('user').setDescription('User to give points to.').setRequired(true))
-        .addIntegerOption(opt => opt.setName('amount').setDescription('Number of points to add.').setRequired(true))
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-
-    await client.application.commands.create(addPointsCommand);
-}
-
-async function handleAddPointsInteraction(interaction) {
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('addpoints')
+    .setDescription('Añade puntos a un usuario')
+    .addUserOption(opt => opt.setName('user').setDescription('Usuario').setRequired(true))
+    .addIntegerOption(opt => opt.setName('amount').setDescription('Cantidad').setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  async execute(interaction) {
     const user = interaction.options.getUser('user');
     const amount = interaction.options.getInteger('amount');
 
-    if (!user || !amount || amount <= 0) {
-        return interaction.reply({ content: '⚠️ Please provide a valid user and amount (>0).', ephemeral: true });
-    }
+    if (amount <= 0) return interaction.reply({ content: 'La cantidad debe ser mayor que 0.', ephemeral: true });
 
-    const total = addPoints(user.id, amount);
+    const total = await addPoints(user.id, amount);
 
     const embed = new EmbedBuilder()
-        .setColor(0xFF4500)
-        .setTitle('💎 Points Update')
-        .setDescription(`✅ **${user.username}** has received **${amount} points.**\nHe/She now has a total of **${total} points.**`)
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'Keep earning points and climb the leaderboard! 💪' })
-        .setTimestamp();
+      .setTitle('💎 Puntos añadidos')
+      .setDescription(`Se añadieron **${amount}** puntos a ${user.username}.\nTotal actual: **${total}** puntos.`)
+      .setColor(0x00B894);
 
-    await interaction.reply({ embeds: [embed], ephemeral: false });
-}
-
-module.exports = { registerAddPointsCommand, handleAddPointsInteraction };
+    await interaction.reply({ embeds: [embed] });
+  },
+};

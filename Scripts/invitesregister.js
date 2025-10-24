@@ -1,8 +1,8 @@
-const { Client, GatewayIntentBits } = require('discord.js');
-const { token } = require('./config.json');
-const registerInvites = require('./invitesRegister'); // 👈 Importamos tu sistema de invitaciones
+require('dotenv').config();
+const { Client, GatewayIntentBits, Events } = require('discord.js');
+const Database = require('better-sqlite3');
 
-// Crear el cliente con todas las intenciones necesarias
+// Crear cliente de Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -11,24 +11,13 @@ const client = new Client({
   ],
 });
 
-// Cuando el bot esté listo
-client.once('ready', async (c) => {
-  console.log(`✅ Logged in as ${c.user.tag}`);
-  await registerInvites(client); // 👈 Activamos el sistema de invitaciones
-});
+// ======== SISTEMA DE INVITACIONES ========
 
-// Iniciar sesión
-client.login(token);
-// invitesRegister.js
-const { Events } = require('discord.js');
-const Database = require('better-sqlite3');
-
-module.exports = async function registerInvites(client) {
-  // Base de datos local
+function setupInviteSystem(client) {
   const db = new Database('./points.db');
   db.prepare(`CREATE TABLE IF NOT EXISTS points (
-      userId TEXT PRIMARY KEY,
-      points INTEGER
+    userId TEXT PRIMARY KEY,
+    points INTEGER
   )`).run();
 
   const getPoints = (userId) => {
@@ -41,17 +30,16 @@ module.exports = async function registerInvites(client) {
     db.prepare('INSERT OR REPLACE INTO points (userId, points) VALUES (?, ?)').run(userId, current + amount);
   };
 
-  // Guardar invitaciones existentes
   const invitesCache = new Map();
 
-  client.guilds.cache.forEach(async (guild) => {
-    const invites = await guild.invites.fetch();
-    invitesCache.set(guild.id, new Map(invites.map(inv => [inv.code, inv.uses])));
+  client.on(Events.ClientReady, async () => {
+    for (const [id, guild] of client.guilds.cache) {
+      const invites = await guild.invites.fetch();
+      invitesCache.set(guild.id, new Map(invites.map(i => [i.code, i.uses])));
+    }
+    console.log('📋 Sistema de invitaciones listo y monitoreando servidores.');
   });
 
-  console.log('📋 Sistema de invitaciones cargado y monitoreando servidores...');
-
-  // Cuando alguien entra
   client.on(Events.GuildMemberAdd, async (member) => {
     try {
       const guild = member.guild;
@@ -64,11 +52,11 @@ module.exports = async function registerInvites(client) {
       if (invite && invite.inviter) {
         const inviter = invite.inviter;
         addPoints(inviter.id, 10);
-        console.log(`👤 ${member.user.tag} fue invitado por ${inviter.tag} (+10 points)`);
+        console.log(`👤 ${member.user.tag} fue invitado por ${inviter.tag} (+10 puntos)`);
 
         const channel = guild.systemChannel || guild.channels.cache.find(c => c.type === 0);
         if (channel) {
-          channel.send(`🎉 ${member.user} fue invitado por ${inviter}. **+10 points** para ${inviter.username}! 💎`);
+          channel.send(`🎉 ${member.user} fue invitado por ${inviter}. **+10 puntos** para ${inviter.username}! 💎`);
         }
       }
     } catch (err) {
@@ -76,7 +64,6 @@ module.exports = async function registerInvites(client) {
     }
   });
 
-  // Si se crean o eliminan invitaciones, actualiza el cache
   client.on(Events.InviteCreate, invite => {
     const guildInvites = invitesCache.get(invite.guild.id) || new Map();
     guildInvites.set(invite.code, invite.uses);
@@ -87,4 +74,16 @@ module.exports = async function registerInvites(client) {
     const guildInvites = invitesCache.get(invite.guild.id);
     if (guildInvites) guildInvites.delete(invite.code);
   });
-};
+}
+
+// ======== INICIO DEL BOT ========
+
+client.once(Events.ClientReady, c => {
+  console.log(`✅ Logged in as ${c.user.tag}`);
+});
+
+// Iniciar el sistema de invitaciones
+setupInviteSystem(client);
+
+// Iniciar sesión
+client.login(process.env.DISCORD_TOKEN);

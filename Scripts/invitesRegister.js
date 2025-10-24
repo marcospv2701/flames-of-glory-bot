@@ -87,3 +87,11 @@ setupInviteSystem(client);
 
 // Iniciar sesión
 client.login(process.env.DISCORD_TOKEN);
+
+async function registerInvites(client) {
+  // tu código actual...
+  console.log("✅ Sistema de invitaciones listo");
+}
+
+// 👇 ESTA LÍNEA ES LA CLAVE
+export default registerInvites;

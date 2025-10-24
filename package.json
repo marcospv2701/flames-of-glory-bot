@@ -1,18 +1,15 @@
 {
-  "name": "flames-of-glory",
+  "name": "flames-of-glory-bot",
   "version": "1.0.0",
-  "description": "Bot de Discord Flames of Glory con base de datos MongoDB",
+  "description": "Discord bot Flames of Glory",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
   },
   "dependencies": {
-    "discord.js": "^14.15.3",
-    "mongoose": "^8.9.1",
-    "dotenv": "^16.4.5",
-    "better-sqlite3": "^8.7.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "discord.js": "^14.13.0",
+    "mongoose": "^7.5.0",
+    "dotenv": "^16.3.1"
   }
 }

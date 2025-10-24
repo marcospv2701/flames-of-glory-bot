@@ -1,6 +1,6 @@
-// ======================
+// =======================
 // Servidor web (para Render y UptimeRobot)
-// ======================
+// =======================
 import express from "express";
 import dotenv from "dotenv";
 import { Client, GatewayIntentBits, Collection, Events } from "discord.js";
@@ -18,15 +18,14 @@ app.get("/", (req, res) => {
 });
 
 // Render necesita que el servicio escuche en un puerto
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🌐 Servidor web activo en puerto ${PORT}`);
+  console.log(`🌐 Servidor Web activo en puerto ${PORT}`);
 });
 
-
-// ======================
+// =======================
 // Discord Bot
-// ======================
+// =======================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -37,17 +36,18 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// =======================
 // Cargar comandos
+// =======================
 const __dirname = path.resolve();
 const commandsPath = path.join(__dirname, "Commands");
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
-  const command = await import(`./Commands/${file}`);
-  if (command.default?.data && command.default?.execute) {
-    client.commands.set(command.default.data.name, command.default);
-    console.log(`✅ Cargado comando: ${command.default.data.name}`);
-  } else if (command.data && command.execute) {
+  const filePath = path.join(commandsPath, file);
+  const command = (await import(`file://${filePath}`)).default;
+
+  if (command?.data && command?.execute) {
     client.commands.set(command.data.name, command);
     console.log(`✅ Cargado comando: ${command.data.name}`);
   } else {
@@ -55,16 +55,17 @@ for (const file of commandFiles) {
   }
 }
 
-// ======================
+// =======================
 // Conexión a MongoDB
-// ======================
-mongoose.connect(process.env.MONGO_URI)
+// =======================
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("🟢 Conectado a MongoDB Atlas"))
   .catch(err => console.error("🔴 Error conectando a MongoDB:", err));
 
-// ======================
+// =======================
 // Eventos del bot
-// ======================
+// =======================
 client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
   if (typeof registerInvites === "function") {
@@ -72,11 +73,12 @@ client.once(Events.ClientReady, async (c) => {
   }
 });
 
-// ======================
+// =======================
 // Ejecución de comandos
-// ======================
+// =======================
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isCommand()) return;
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
@@ -91,7 +93,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-// ======================
-// Login
-// ======================
+// =======================
+// Login del bot
+// =======================
 client.login(process.env.DISCORD_TOKEN);

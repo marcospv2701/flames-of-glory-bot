@@ -18,8 +18,11 @@ app.get("/", (req, res) => {
 });
 
 // Render necesita que el servicio escuche en un puerto
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🌐 Servidor web activo en puerto ${PORT}`));
+const PORT = process.env.PORT;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🌐 Servidor web activo en puerto ${PORT}`);
+});
+
 
 // ======================
 // Discord Bot

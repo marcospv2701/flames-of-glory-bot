@@ -1,18 +1,15 @@
 {
   "name": "flames-of-glory-bot",
   "version": "1.0.0",
-  "description": "Discord bot Flames of Glory",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "deploy": "node deploy-commands.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^12.4.1",
-    "discord.js": "^14.13.0",
-    "dotenv": "^16.3.1",
-    "express": "^5.1.0",
-    "mongoose": "^7.5.0"
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.6.0"
   }
 }

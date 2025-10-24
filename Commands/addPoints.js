@@ -1,26 +1,37 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const { addPoints } = require('../Data/dataPoints');
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from "discord.js";
+import Points from "../Models/Points.js";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('addpoints')
-    .setDescription('Añade puntos a un usuario')
-    .addUserOption(opt => opt.setName('user').setDescription('Usuario').setRequired(true))
-    .addIntegerOption(opt => opt.setName('amount').setDescription('Cantidad').setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
-  async execute(interaction) {
-    const user = interaction.options.getUser('user');
-    const amount = interaction.options.getInteger('amount');
+export const data = new SlashCommandBuilder()
+  .setName("addpoints")
+  .setDescription("Añade puntos a un usuario")
+  .addUserOption(option =>
+    option.setName("usuario")
+      .setDescription("Usuario al que quieres añadir puntos")
+      .setRequired(true)
+  )
+  .addIntegerOption(option =>
+    option.setName("cantidad")
+      .setDescription("Cantidad de puntos a añadir")
+      .setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
-    if (amount <= 0) return interaction.reply({ content: 'La cantidad debe ser mayor que 0.', ephemeral: true });
+export async function execute(interaction) {
+  const user = interaction.options.getUser("usuario");
+  const cantidad = interaction.options.getInteger("cantidad");
 
-    const total = await addPoints(user.id, amount);
+  let userData = await Points.findOne({ userId: user.id });
+  if (!userData) {
+    userData = new Points({ userId: user.id, points: 0 });
+  }
 
-    const embed = new EmbedBuilder()
-      .setTitle('💎 Puntos añadidos')
-      .setDescription(`Se añadieron **${amount}** puntos a ${user.username}.\nTotal actual: **${total}** puntos.`)
-      .setColor(0x00B894);
+  userData.points += cantidad;
+  await userData.save();
 
-    await interaction.reply({ embeds: [embed] });
-  },
-};
+  const embed = new EmbedBuilder()
+    .setTitle("💎 Puntos añadidos")
+    .setDescription(`Se añadieron **${cantidad}** puntos a **${user.username}**.`)
+    .setColor("Green");
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}

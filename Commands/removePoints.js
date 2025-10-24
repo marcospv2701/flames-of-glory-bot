@@ -1,26 +1,37 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const { removePoints } = require('../Data/dataPoints');
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from "discord.js";
+import Points from "../Models/Points.js";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('removepoints')
-    .setDescription('Quita puntos a un usuario')
-    .addUserOption(opt => opt.setName('user').setDescription('Usuario').setRequired(true))
-    .addIntegerOption(opt => opt.setName('amount').setDescription('Cantidad').setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
-  async execute(interaction) {
-    const user = interaction.options.getUser('user');
-    const amount = interaction.options.getInteger('amount');
+export const data = new SlashCommandBuilder()
+  .setName("removepoints")
+  .setDescription("Resta puntos a un usuario")
+  .addUserOption(option =>
+    option.setName("usuario")
+      .setDescription("Usuario al que quitar puntos")
+      .setRequired(true)
+  )
+  .addIntegerOption(option =>
+    option.setName("cantidad")
+      .setDescription("Cantidad de puntos a quitar")
+      .setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
-    if (amount <= 0) return interaction.reply({ content: 'La cantidad debe ser mayor que 0.', ephemeral: true });
+export async function execute(interaction) {
+  const user = interaction.options.getUser("usuario");
+  const cantidad = interaction.options.getInteger("cantidad");
 
-    const total = await removePoints(user.id, amount);
+  let userData = await Points.findOne({ userId: user.id });
+  if (!userData) {
+    userData = new Points({ userId: user.id, points: 0 });
+  }
 
-    const embed = new EmbedBuilder()
-      .setTitle('❌ Puntos removidos')
-      .setDescription(`Se quitaron **${amount}** puntos a ${user.username}.\nTotal actual: **${total}** puntos.`)
-      .setColor(0xE74C3C);
+  userData.points = Math.max(0, userData.points - cantidad);
+  await userData.save();
 
-    await interaction.reply({ embeds: [embed] });
-  },
-};
+  const embed = new EmbedBuilder()
+    .setTitle("📉 Puntos eliminados")
+    .setDescription(`Se eliminaron **${cantidad}** puntos a **${user.username}**.`)
+    .setColor("Red");
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
